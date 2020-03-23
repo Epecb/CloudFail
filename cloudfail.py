@@ -10,10 +10,11 @@ import requests
 import colorama
 import zipfile
 import os
-import win_inet_pton
 import platform
 from colorama import Fore, Style
 from DNSDumpsterAPI import DNSDumpsterAPI
+if platform == 'Windows':
+    import win_inet_pton
 
 colorama.init(Style.BRIGHT)
 
@@ -37,7 +38,10 @@ def ip_to_integer(ip_address):
     # try parsing the IP address first as IPv4, then as IPv6
     for version in (socket.AF_INET, socket.AF_INET6):
         try:
-            ip_hex = win_inet_pton.inet_pton(version, ip_address) if platform == 'Windows' else socket.inet_pton(version, ip_address)
+            if platform == 'Windows':
+                ip_hex = win_inet_pton.inet_pton(version, ip_address)
+            else:
+                ip_hex = socket.inet_pton(version, ip_address)
             ip_integer = int(binascii.hexlify(ip_hex), 16)
 
             return ip_integer, 4 if version == socket.AF_INET else 6
