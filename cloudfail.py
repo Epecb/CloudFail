@@ -20,8 +20,10 @@ colorama.init(Style.BRIGHT)
 
 
 def print_out(data, end='\n'):
-    datetimestr = str(datetime.datetime.strftime(datetime.datetime.now(), '%H:%M:%S'))
-    print(Style.NORMAL + "[" + datetimestr + "] " + data + Style.RESET_ALL,' ', end=end)
+    datetimestr = str(datetime.datetime.strftime(
+        datetime.datetime.now(), '%H:%M:%S'))
+    print(Style.NORMAL + "[" + datetimestr + "] " +
+          data + Style.RESET_ALL, ' ', end=end)
 
 
 def ip_in_subnetwork(ip_address, subnetwork):
@@ -45,7 +47,7 @@ def ip_to_integer(ip_address):
             ip_integer = int(binascii.hexlify(ip_hex), 16)
 
             return ip_integer, 4 if version == socket.AF_INET else 6
-        except:
+        except Exception as ex:
             pass
 
     raise ValueError("invalid IP address")
@@ -72,9 +74,9 @@ def subnetwork_to_ip_range(subnetwork):
                 return (ip_lower,
                         ip_upper,
                         4 if version == socket.AF_INET else 6)
-            except:
+            except Exception as ex:
                 pass
-    except:
+    except Exception as ex:
         pass
 
     raise ValueError("invalid subnetwork")
@@ -90,7 +92,9 @@ def dnsdumpster(target):
             provider = str(entry['provider'])
             if "Cloudflare" not in provider:
                 print_out(
-                    Style.BRIGHT + Fore.WHITE + "[FOUND:HOST] " + Fore.GREEN + "{domain} {ip} {as} {provider} {country}".format(
+                    Style.BRIGHT + Fore.WHITE + "[FOUND:HOST] " +
+                    Fore.GREEN +
+                    "{domain} {ip} {as} {provider} {country}".format(
                         **entry))
 
     if res['dns_records']['dns']:
@@ -98,15 +102,17 @@ def dnsdumpster(target):
             provider = str(entry['provider'])
             if "Cloudflare" not in provider:
                 print_out(
-                    Style.BRIGHT + Fore.WHITE + "[FOUND:DNS] " + Fore.GREEN + "{domain} {ip} {as} {provider} {country}".format(
-                        **entry))
+                    Style.BRIGHT + Fore.WHITE + "[FOUND:DNS] " +
+                    Fore.GREEN +
+                    "{domain} {ip} {as} {provider} {country}".format(**entry))
 
     if res['dns_records']['mx']:
         for entry in res['dns_records']['mx']:
             provider = str(entry['provider'])
             if "Cloudflare" not in provider:
                 print_out(
-                    Style.BRIGHT + Fore.WHITE + "[FOUND:MX] " + Fore.GREEN + "{ip} {as} {provider} {domain}".format(
+                    Style.BRIGHT + Fore.WHITE + "[FOUND:MX] " +
+                    Fore.GREEN + "{ip} {as} {provider} {domain}".format(
                         **entry))
 
 
@@ -123,22 +129,24 @@ def crimeflare(target):
                 continue
     if (len(crimeFoundArray) != 0):
         for foundIp in crimeFoundArray:
-            print_out(Style.BRIGHT + Fore.WHITE + "[FOUND:IP] " + Fore.GREEN + "" + foundIp.strip())
+            print_out(Style.BRIGHT + Fore.WHITE +
+                      "[FOUND:IP] " + Fore.GREEN + "" + foundIp.strip())
     else:
         print_out("Did not find anything.")
 
 
 def init(target):
     if args.target:
-        print_out(Fore.CYAN + "Fetching initial information from: " + args.target + "...")
+        print_out(Fore.CYAN + "Fetching initial information from: " +
+                  args.target + "...")
     else:
         print_out(Fore.RED + "No target set, exiting")
         sys.exit(1)
 
     if not os.path.isfile("data/ipout"):
-            print_out(Fore.CYAN + "No ipout file found, fetching data")
-            update()
-            print_out(Fore.CYAN + "ipout file created")
+        print_out(Fore.CYAN + "No ipout file found, fetching data")
+        update()
+        print_out(Fore.CYAN + "ipout file created")
 
     try:
         ip = socket.gethostbyname(args.target)
@@ -147,18 +155,23 @@ def init(target):
         sys.exit(0)
 
     print_out(Fore.CYAN + "Server IP: " + ip)
-    print_out(Fore.CYAN + "Testing if " + args.target + " is on the Cloudflare network...")
+    print_out(Fore.CYAN + "Testing if " + args.target +
+              " is on the Cloudflare network...")
 
     try:
         ifIpIsWithin = inCloudFlare(ip)
 
         if ifIpIsWithin:
-            print_out(Style.BRIGHT + Fore.GREEN + args.target + " is part of the Cloudflare network!")
+            print_out(Style.BRIGHT + Fore.GREEN + args.target +
+                      " is part of the Cloudflare network!")
         else:
-            print_out(Fore.RED + args.target + " is not part of the Cloudflare network, quitting...")
+            print_out(Fore.RED + args.target +
+                      " is not part of the Cloudflare network, quitting...")
             sys.exit(0)
     except ValueError:
-        print_out(Fore.RED + "IP address does not appear to be within Cloudflare range, shutting down..")
+        print_out(
+            Fore.RED +
+            "IP address does not appear to be within Cloudflare range, shutting down..")
         sys.exit(0)
 
 
@@ -175,19 +188,23 @@ def subdomain_scan(target, subdomains):
     i = 0
     c = 0
     if subdomains:
-    	subdomainsList = subdomains
+        subdomainsList = subdomains
     else:
-    	subdomainsList = "subdomains.txt"
+        subdomainsList = "subdomains.txt"
     try:
         with open("data/" + subdomainsList, "r") as wordlist:
-            numOfLines = len(open("data/subdomains.txt").readlines(  ))
+            numOfLines = len(open("data/subdomains.txt").readlines())
             numOfLinesInt = numOfLines
             numOfLines = str(numOfLines)
-            print_out(Fore.CYAN + "Scanning " + numOfLines + " subdomains (" + subdomainsList + "), please wait...")
+            print_out(Fore.CYAN + "Scanning " + numOfLines +
+                      " subdomains (" + subdomainsList + "), please wait...")
             for word in wordlist:
                 c += 1
                 if (c % int((float(numOfLinesInt) / 100.0))) == 0:
-                    print_out(Fore.CYAN + str(round((c / float(numOfLinesInt)) * 100.0, 2)) + "% complete", '\r')
+                    print_out(
+                        Fore.CYAN +
+                        str(round((c / float(numOfLinesInt)) * 100.0, 2)) +
+                        "% complete", '\r')
 
                 subdomain = "{}.{}".format(word.strip(), target)
                 try:
@@ -198,33 +215,48 @@ def subdomain_scan(target, subdomains):
 
                     if not ifIpIsWithin:
                         i += 1
-                        print_out(Style.BRIGHT+Fore.WHITE+"[FOUND:SUBDOMAIN] "+Fore.GREEN + subdomain + " IP: " + ip + " HTTP: " + target_http)
+                        print_out(Style.BRIGHT + Fore.WHITE +
+                                  "[FOUND:SUBDOMAIN] " +
+                                  Fore.GREEN +
+                                  subdomain + " IP: " + ip +
+                                  " HTTP: " + target_http)
                     else:
-                        print_out(Style.BRIGHT+Fore.WHITE+"[FOUND:SUBDOMAIN] "+Fore.RED + subdomain + " ON CLOUDFLARE NETWORK!")
+                        print_out(
+                            Style.BRIGHT+Fore.WHITE +
+                            "[FOUND:SUBDOMAIN] " +
+                            Fore.RED + subdomain + " ON CLOUDFLARE NETWORK!")
                         continue
 
                 except requests.exceptions.RequestException as e:
                     continue
             if(i == 0):
-                print_out(Fore.CYAN + "Scanning finished, we did not find anything sorry...")
+                print_out(
+                    Fore.CYAN +
+                    "Scanning finished, we did not find anything sorry...")
             else:
                 print_out(Fore.CYAN + "Scanning finished...")
 
     except IOError:
-        print_out(Fore.RED + "Subdomains file does not exist in data directory, aborting scan...")
+        print_out(
+            Fore.RED +
+            "Subdomains file does not exist in data directory, aborting scan...")
         sys.exit(1)
+
 
 def update():
     print_out(Fore.CYAN + "Just checking for updates, please wait...")
     print_out(Fore.CYAN + "Updating CloudFlare subnet...")
-    if(args.tor == False):
+    if(args.tor is False):
         headers = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; it; rv:1.8.1.11) Gecko/20071127 Firefox/2.0.0.11'}
-        r = requests.get("https://www.cloudflare.com/ips-v4", headers=headers, cookies={'__cfduid': "d7c6a0ce9257406ea38be0156aa1ea7a21490639772"}, stream=True)
+        r = requests.get("https://www.cloudflare.com/ips-v4",
+                         headers=headers,
+                         cookies={'__cfduid': "d7c6a0ce9257406ea38be0156aa1ea7a21490639772"}, stream=True)
         with open('data/cf-subnet.txt', 'wb') as fd:
             for chunk in r.iter_content(4000):
                 fd.write(chunk)
     else:
-        print_out(Fore.RED + Style.BRIGHT+"Unable to fetch CloudFlare subnet while TOR is active")
+        print_out(Fore.RED + Style.BRIGHT +
+                  "Unable to fetch CloudFlare subnet while TOR is active")
     print_out(Fore.CYAN + "Updating Crimeflare database...")
     r = requests.get("http://crimeflare.net:83/domains/ipout.zip", stream=True)
     with open('data/ipout.zip', 'wb') as fd:
@@ -254,9 +286,12 @@ print_out("Initializing CloudFail - the date is: " + datestr)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--target", help="target url of website", type=str)
-parser.add_argument("-T", "--tor", dest="tor", action="store_true", help="enable TOR routing")
-parser.add_argument("-u", "--update", dest="update", action="store_true", help="update databases")
-parser.add_argument("-s", "--subdomains", help="name of alternate subdomains list stored in the data directory", type=str)
+parser.add_argument("-T", "--tor", dest="tor",
+                    action="store_true", help="enable TOR routing")
+parser.add_argument("-u", "--update", dest="update",
+                    action="store_true", help="update databases")
+parser.add_argument("-s", "--subdomains",
+                    help="name of alternate subdomains list stored in the data directory", type=str)
 parser.set_defaults(tor=False)
 parser.set_defaults(update=False)
 
@@ -274,7 +309,10 @@ if args.tor is True:
         print_out(Fore.WHITE + Style.BRIGHT + "New IP: " + tor_ip)
 
     except requests.exceptions.RequestException as e:
-        print(e, net_exc)
+        if platform == 'Windows':
+            print(e, net_exc)
+        else:
+            print(e)
         sys.exit(0)
 
 if args.update is True:
